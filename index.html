@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Nintendo Fitness Y2K</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#21242e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Console Top Bar -->
+    <header>
+      <div class="logo-container">
+        <div class="logo-pill">
+          <span class="logo-text">Nintendo</span>
+        </div>
+        <span style="color: #ecab37; font-family: 'Press Start 2P', monospace; font-size: 8px;">FITNESS</span>
+      </div>
+      <div id="connection-status" class="header-status">ONLINE</div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab-btn active" onclick="switchView('running')">RUNNING</button>
+      <button class="nav-tab-btn" onclick="switchView('squat')">SQUAT</button>
+      <button class="nav-tab-btn" onclick="switchView('settings')">SETTING</button>
+    </nav>
+
+    <!-- Main Screens Container -->
+    <main>
+      
+      <!-- 1. RUNNING VIEW -->
+      <div id="view-running" class="app-view active">
+        <div class="console-plate">
+          <div class="plate-header">
+            <span>🔴 GPS RECORDER</span>
+            <span>v1.2</span>
+          </div>
+          
+          <div class="inset-screen">
+            <div class="screen-row">
+              <span>STATUS:</span>
+              <span id="gps-status"><span class="status-indicator"></span>STANDBY</span>
+            </div>
+            <div class="screen-large" id="gps-distance">0.00 km</div>
+            <div class="screen-row">
+              <span>PACE: <span id="gps-pace">--:--</span></span>
+              <span>TIME: <span id="gps-time">00:00</span></span>
+            </div>
+          </div>
+
+          <div class="guide-box">
+            GPS 정확도 20m 미만 필터링 및 터널 통과 시 <strong>10초 페이스 자동 보간(Dead Reckoning)</strong>이 탑재되어 있습니다.
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-run-start" class="btn-y2k" style="flex: 1;" onclick="startRunning()">START</button>
+            <button id="btn-run-stop" class="btn-y2k btn-red" style="flex: 1;" onclick="stopRunning()" disabled>STOP</button>
+          </div>
+          
+          <!-- Test Simulator Toggle to emulate GPS drops -->
+          <div class="settings-group" style="margin-top: 8px; padding-top: 8px; border-top: 1px dotted var(--color-muted-indigo);">
+            <label class="settings-label" style="display: flex; align-items: center; justify-content: space-between;">
+              <span>[SIMULATOR] EMULATE TUNNEL</span>
+              <input type="checkbox" id="sim-gps-drop" style="width: 16px; height: 16px;">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. SQUAT VIEW -->
+      <div id="view-squat" class="app-view">
+        <div class="console-plate">
+          <div class="plate-header">
+            <span>👾 MOTION SQUAT</span>
+            <span>100Hz</span>
+          </div>
+
+          <div class="inset-screen">
+            <div class="screen-row">
+              <span>GYRO TILT:</span>
+              <span id="squat-tilt">OK (0°)</span>
+            </div>
+            <div class="screen-large" id="squat-count">000</div>
+            <div class="screen-row">
+              <span>SENSORS: <span id="squat-sensor-status">OK</span></span>
+              <span>STATE: <span id="squat-motion-state">READY</span></span>
+            </div>
+          </div>
+
+          <!-- Real-time Motion Graph -->
+          <div class="sensor-chart-container">
+            <div style="position: absolute; top: 4px; left: 6px; font-family: 'Press Start 2P', monospace; font-size: 6px; color: #8be03a; z-index: 10;">
+              3-AXIS ACCELERATION NORM
+            </div>
+            <canvas id="motion-canvas" class="sensor-chart"></canvas>
+          </div>
+
+          <div class="guide-box">
+            폰을 <strong>가슴 앞에 수직으로 세워 들고</strong> 천천히 스쿼트를 진행하세요. 중력이 배제된 3축 합성 가속도($\sqrt{x^2+y^2+z^2}$) 동적 분석 시스템이 작동합니다.
+          </div>
+
+          <button id="btn-squat-toggle" class="btn-y2k" onclick="toggleSquat()">START SQUAT</button>
+        </div>
+      </div>
+
+      <!-- 3. SETTINGS & SYNC VIEW -->
+      <div id="view-settings" class="app-view">
+        <div class="console-plate">
+          <div class="plate-header">
+            <span>🔧 SYSTEM SETTINGS</span>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">GOOGLE SHEET WEBHOOK URL</label>
+            <input type="url" id="sheet-url" class="settings-input" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+
+          <div class="guide-box" style="font-size: 10px;">
+            <strong>구글 시트 연동 가이드:</strong><br>
+            1. 구글 스프레드시트 생성<br>
+            2. [확장 프로그램] -> [Apps Script] 클릭<br>
+            3. 아래 코드를 복사해서 붙여넣고 [배포] -> [새 배포] -> [웹 앱] 선택 (액세스 권한: 모든 사용자)<br>
+            4. 발급된 URL을 위 입력창에 붙여넣어 주세요.
+          </div>
+
+          <!-- Mini Code Viewer for convenience -->
+          <textarea readonly class="settings-input" style="height: 100px; font-family: monospace; font-size: 10px; background-color: var(--color-platinum); font-weight: bold; border-style: dotted;" onclick="this.select()">
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    sheet.appendRow([
+      new Date(),
+      data.device_model || "Web",
+      data.workout_type,
+      data.metrics,
+      data.stars || "",
+      data.comment || ""
+    ]);
+    return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({result: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+          </textarea>
+
+          <div class="settings-group" style="margin-top: 10px;">
+            <span class="settings-label" style="margin-bottom: 4px;">OFFLINE CACHED QUEUE</span>
+            <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center; background-color: var(--color-platinum); padding: 8px; border-radius: 6px; border: 2px solid var(--color-carbon);">
+              <span style="font-family: 'Press Start 2P', monospace; font-size: 8px;">PENDING: <span id="queue-count">0</span></span>
+              <button class="btn-y2k btn-amber" style="padding: 4px 8px; font-size: 8px;" onclick="syncQueue()">SYNC NOW</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Feedback Overlay Modal -->
+    <div id="feedback-modal" class="overlay-modal">
+      <div class="feedback-card">
+        <div class="console-plate" style="margin: 0; box-shadow: none;">
+          <div class="plate-header">
+            <span>⭐ SESSION ENDED</span>
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 8px;">
+            <p style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--color-carbon);">EXCELLENT WORK!</p>
+            <p id="feedback-workout-summary" style="font-size: 12px; margin-top: 4px; font-weight: bold; color: var(--color-ink-soft);"></p>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label" style="text-align: center;">HOW WAS THE MEASUREMENT ACCURATE?</label>
+            <div class="stars-container">
+              <button class="star-btn" onclick="rateSession(1)">★</button>
+              <button class="star-btn" onclick="rateSession(2)">★</button>
+              <button class="star-btn" onclick="rateSession(3)">★</button>
+              <button class="star-btn" onclick="rateSession(4)">★</button>
+              <button class="star-btn" onclick="rateSession(5)">★</button>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <label class="settings-label">USER OPINION / BUG REPORT</label>
+            <input type="text" id="feedback-comment" class="settings-input" placeholder="스쿼트 인식이 잘 되나요? 의견을 남겨주세요.">
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn-y2k" style="flex: 1;" onclick="submitFeedback()">SEND FEEDBACK</button>
+            <button class="btn-y2k btn-red" style="flex: 1;" onclick="closeFeedback()">CLOSE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Toast Notification -->
+    <div id="toast" class="toast">NOTIFICATION</div>
+  </div>
+
+  <script src="./app.js"></script>
+  <script>
+    // Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker Registered'));
+    }
+  </script>
+</body>
+</html>

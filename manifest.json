@@ -1,0 +1,18 @@
+{
+  "name": "Nintendo Fitness Y2K",
+  "short_name": "Y2K Fitness",
+  "description": "Nintendo 2001 Style Running & Squat Tracker PWA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#7a8aba",
+  "theme_color": "#21242e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/512/nintendo-game-boy-color.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
