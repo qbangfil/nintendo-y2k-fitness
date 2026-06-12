@@ -675,3 +675,31 @@ window.addEventListener('load', () => {
   window.addEventListener('offline', updateOnlineStatus);
   updateOnlineStatus(); // initial trigger
 });
+
+// Manual feedback submission inside settings
+function submitFeedbackDirect() {
+  const commentInput = document.getElementById('feedback-comment');
+  const commentText = commentInput.value.trim();
+  
+  if (!commentText) {
+    showToast('PLEASE ENTER A COMMENT FIRST');
+    return;
+  }
+  
+  const feedbackData = {
+    workout_type: 'FEEDBACK',
+    metrics: 'User text feedback',
+    device_model: navigator.userAgent.includes('Android') ? 'Android Device' : 'iOS/Web Device',
+    comment: commentText,
+    timestamp: new Date().toISOString()
+  };
+  
+  webhookQueue.push(feedbackData);
+  localStorage.setItem('y2k_webhook_queue', JSON.stringify(webhookQueue));
+  updateQueueUI();
+  
+  commentInput.value = '';
+  showToast('FEEDBACK SAVED TO QUEUE');
+  
+  syncQueue();
+}

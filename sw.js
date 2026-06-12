@@ -1,4 +1,4 @@
-const CACHE_NAME = 'y2k-fitness-v1';
+const CACHE_NAME = 'y2k-fitness-v3';
 const ASSETS = [
   './',
   './index.html',

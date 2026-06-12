@@ -36,7 +36,7 @@
     <nav class="nav-tabs">
       <button class="nav-tab-btn active" onclick="switchView('running')">RUNNING</button>
       <button class="nav-tab-btn" onclick="switchView('squat')">SQUAT</button>
-      <button class="nav-tab-btn" onclick="switchView('settings')">SETTING</button>
+      <button class="nav-tab-btn" onclick="switchView('settings')">SYNC & FEEDBACK</button>
     </nav>
 
     <!-- Main Screens Container -->
@@ -117,21 +117,20 @@
         </div>
       </div>
 
-      <!-- 3. SETTINGS & SYNC VIEW -->
+      <!-- 3. SYNC & FEEDBACK VIEW -->
       <div id="view-settings" class="app-view">
         <div class="console-plate">
           <div class="plate-header">
-            <span>🔧 SYSTEM SETTINGS</span>
+            <span>🔧 SYNC & FEEDBACK</span>
           </div>
 
           <div class="settings-group">
-            <label class="settings-label">GOOGLE SHEET CONNECTION STATUS</label>
-            <div style="background-color: var(--color-platinum); padding: 12px; border-radius: 6px; border: 2px solid var(--color-carbon); font-weight: bold;">
-              <span class="status-indicator green"></span> 구글 스프레드시트가 자동으로 연결되어 동작 중입니다.
-            </div>
+            <label class="settings-label">LEAVE YOUR FEEDBACK</label>
+            <textarea id="feedback-comment" class="settings-input" style="height: 120px; font-family: var(--font-ui); font-size: 13px; line-height: 1.4; resize: none;" placeholder="스쿼트나 러닝 측정이 정상적으로 작동하나요? 자유롭게 의견을 적어주세요."></textarea>
+            <button class="btn-y2k btn-amber" style="margin-top: 6px;" onclick="submitFeedbackDirect()">SEND FEEDBACK</button>
           </div>
 
-          <div class="settings-group" style="margin-top: 10px;">
+          <div class="settings-group" style="margin-top: 10px; border-top: 1px dotted var(--color-muted-indigo); padding-top: 10px;">
             <span class="settings-label" style="margin-bottom: 4px;">OFFLINE CACHED QUEUE</span>
             <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center; background-color: var(--color-platinum); padding: 8px; border-radius: 6px; border: 2px solid var(--color-carbon);">
               <span style="font-family: 'Press Start 2P', monospace; font-size: 8px;">PENDING: <span id="queue-count">0</span></span>
@@ -151,20 +150,13 @@
             <span>⭐ SESSION ENDED</span>
           </div>
           
-          <div style="text-align: center; margin-bottom: 8px;">
-            <p style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--color-carbon);">EXCELLENT WORK!</p>
-            <p id="feedback-workout-summary" style="font-size: 12px; margin-top: 4px; font-weight: bold; color: var(--color-ink-soft);"></p>
+          <div style="text-align: center; margin: 16px 0;">
+            <p style="font-family: 'Press Start 2P', monospace; font-size: 12px; color: var(--color-primary);">EXCELLENT WORK!</p>
+            <p id="feedback-workout-summary" style="font-size: 13px; margin-top: 12px; font-weight: bold; color: var(--color-carbon);"></p>
+            <p style="font-size: 11px; margin-top: 12px; color: var(--color-ink-soft);">기록이 자동으로 구글 시트로 전송되었습니다.</p>
           </div>
 
-          <div class="settings-group">
-            <label class="settings-label">USER OPINION / BUG REPORT (TEXT ONLY)</label>
-            <textarea id="feedback-comment" class="settings-input" style="height: 120px; font-family: var(--font-ui); font-size: 13px; line-height: 1.4; resize: none;" placeholder="스쿼트나 러닝 측정이 정상적으로 작동하나요? 자유롭게 의견을 적어주세요."></textarea>
-          </div>
-
-          <div style="display: flex; gap: 8px; margin-top: 8px;">
-            <button class="btn-y2k" style="flex: 1;" onclick="submitFeedback()">SEND FEEDBACK</button>
-            <button class="btn-y2k btn-red" style="flex: 1;" onclick="closeFeedback()">CLOSE</button>
-          </div>
+          <button class="btn-y2k btn-red" style="width: 100%;" onclick="closeFeedback()">OK</button>
         </div>
       </div>
     </div>
@@ -178,7 +170,18 @@
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('Service Worker Registered'));
+        .then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Instantly refresh window when new sw is installed
+                window.location.reload();
+              }
+            });
+          });
+          console.log('Service Worker Registered');
+        });
     }
   </script>
 </body>
