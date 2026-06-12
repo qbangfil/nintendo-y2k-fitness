@@ -21,7 +21,7 @@ let sensorNormHistory = [];
 const SENSOR_HISTORY_LIMIT = 150; // 1.5 seconds at ~100Hz
 let squatCount = 0;
 let lowPassFilteredNorm = 0;
-let baseThreshold = 1.5; // Dynamic Standard Deviation Threshold base
+let baseThreshold = 1.1; // v1.2 Policy relaxed to 1.1m/s2 for general tests // Dynamic Standard Deviation Threshold base
 let dynamicThresholdHigh = 1.5;
 let dynamicThresholdLow = -1.5;
 let squatPeakDetected = false;
@@ -36,7 +36,9 @@ const ctx = canvas.getContext('2d');
 let graphData = new Array(80).fill(0);
 
 // Rating Selection
-// selectedStars removed
+// System logs metrics
+let peakAccNorm = 0;
+let tiltWarningCount = 0;
 
 // --- VIEW NAVIGATION ---
 function switchView(viewName) {
@@ -128,6 +130,7 @@ function startRunning() {
     updateRunningUI();
   }, 3000);
   
+  startRunnerAnimation();
   showToast('GPS TRACKING STARTED');
 }
 
@@ -224,6 +227,7 @@ function stopRunning() {
   const finalDistance = gpsAccumulatedDistance;
   const finalTime = runDurationSeconds;
   
+  stopRunnerAnimation();
   activeWorkout = null;
   document.getElementById('gps-status').innerHTML = '<span class="status-indicator"></span>STANDBY';
   document.getElementById('btn-run-start').disabled = false;
@@ -302,6 +306,8 @@ function initSquatSensors() {
   activeWorkout = 'squat';
   isSquatting = true;
   squatCount = 0;
+  peakAccNorm = 0;
+  tiltWarningCount = 0;
   sensorNormHistory = [];
   lastSquatCountTime = Date.now();
   
@@ -311,9 +317,6 @@ function initSquatSensors() {
   document.getElementById('btn-squat-toggle').classList.add('btn-red');
   
   window.addEventListener('devicemotion', handleDeviceMotion, true);
-  
-  // Start graph rendering animation loop
-  requestAnimationFrame(drawGraph);
   showToast('SQUAT TRACKING READY');
 }
 
@@ -350,12 +353,25 @@ function handleDeviceMotion(e) {
     
     // Policy 5.2: Gyro warning threshold (30 degrees tilt)
     if (maxTilt > 30) {
+      tiltWarningCount++;
       document.getElementById('squat-tilt').innerHTML = `<span style="color: var(--color-primary)">TILT (${Math.round(maxTilt)}°)</span>`;
       document.getElementById('squat-tilt').classList.add('blink');
     } else {
       document.getElementById('squat-tilt').innerText = `OK (${Math.round(maxTilt)}°)`;
       document.getElementById('squat-tilt').classList.remove('blink');
     }
+  }
+
+  // Track Peak
+  if (lowPassFilteredNorm > peakAccNorm) {
+    peakAccNorm = lowPassFilteredNorm;
+  }
+  
+  // Update motion gauge bar height (instead of canvas graph draw)
+  const gaugePercent = Math.min(100, Math.max(0, (lowPassFilteredNorm - dynamicThresholdLow) / (dynamicThresholdHigh - dynamicThresholdLow) * 100));
+  const gaugeBar = document.getElementById('squat-gauge-bar');
+  if (gaugeBar) {
+    gaugeBar.style.width = gaugePercent + '%';
   }
 
   // Push to history for dynamic standard deviation threshold computation
@@ -702,4 +718,36 @@ function submitFeedbackDirect() {
   showToast('FEEDBACK SAVED TO QUEUE');
   
   syncQueue();
+}
+
+// Running character frames
+let runnerAnimInterval = null;
+const runnerFrames = [
+  '\\\\o-[===]',
+  '|o-[===]',
+  '/o-[===]',
+  '-o-[===]'
+];
+let currentRunnerFrameIdx = 0;
+
+function startRunnerAnimation() {
+  if (runnerAnimInterval) clearInterval(runnerAnimInterval);
+  runnerAnimInterval = setInterval(() => {
+    currentRunnerFrameIdx = (currentRunnerFrameIdx + 1) % runnerFrames.length;
+    const runnerEl = document.getElementById('running-runner-character');
+    if (runnerEl) {
+      runnerEl.innerText = runnerFrames[currentRunnerFrameIdx];
+    }
+  }, 250);
+}
+
+function stopRunnerAnimation() {
+  if (runnerAnimInterval) {
+    clearInterval(runnerAnimInterval);
+    runnerAnimInterval = null;
+  }
+  const runnerEl = document.getElementById('running-runner-character');
+  if (runnerEl) {
+    runnerEl.innerText = 'o-[===]';
+  }
 }

@@ -50,12 +50,19 @@
             <span>v1.2</span>
           </div>
           
-          <div class="inset-screen">
+          <div class="inset-screen" style="position: relative; overflow: hidden;">
             <div class="screen-row">
               <span>STATUS:</span>
               <span id="gps-status"><span class="status-indicator"></span>STANDBY</span>
             </div>
             <div class="screen-large" id="gps-distance">0.00 km</div>
+            
+            <!-- Y2K Runner Sprite Animation Box -->
+            <div id="running-animation-container" style="height: 35px; width: 100%; display: flex; justify-content: center; align-items: center; margin-top: -5px; margin-bottom: 5px; opacity: 0.8;">
+              <!-- Pixel Art Sprite Run/Idle Frame -->
+              <span id="running-runner-character" style="font-family: monospace; font-size: 20px; color: #8be03a; letter-spacing: -2px; font-weight: bold;">o-[===]</span>
+            </div>
+
             <div class="screen-row">
               <span>PACE: <span id="gps-pace">--:--</span></span>
               <span>TIME: <span id="gps-time">00:00</span></span>
@@ -101,12 +108,15 @@
             </div>
           </div>
 
-          <!-- Real-time Motion Graph -->
-          <div class="sensor-chart-container">
+          <!-- Y2K Vertical Motion Gauge -->
+          <div class="sensor-chart-container" style="display: flex; justify-content: center; align-items: center; padding: 10px;">
             <div style="position: absolute; top: 4px; left: 6px; font-family: 'Press Start 2P', monospace; font-size: 6px; color: #8be03a; z-index: 10;">
-              3-AXIS ACCELERATION NORM
+              MOTION HEIGHT GAUGE
             </div>
-            <canvas id="motion-canvas" class="sensor-chart"></canvas>
+            <!-- Custom Retro Piston Slider -->
+            <div style="width: 80%; height: 20px; background-color: var(--color-carbon); border: 2px solid #8be03a; border-radius: 999px; position: relative; overflow: hidden;">
+              <div id="squat-gauge-bar" style="height: 100%; width: 50%; background-color: #8be03a; box-shadow: 0 0 10px #8be03a; transition: width 0.05s ease; border-radius: 999px;"></div>
+            </div>
           </div>
 
           <div class="guide-box">
@@ -150,13 +160,20 @@
             <span>⭐ SESSION ENDED</span>
           </div>
           
-          <div style="text-align: center; margin: 16px 0;">
-            <p style="font-family: 'Press Start 2P', monospace; font-size: 12px; color: var(--color-primary);">EXCELLENT WORK!</p>
-            <p id="feedback-workout-summary" style="font-size: 13px; margin-top: 12px; font-weight: bold; color: var(--color-carbon);"></p>
-            <p style="font-size: 11px; margin-top: 12px; color: var(--color-ink-soft);">기록이 자동으로 구글 시트로 전송되었습니다.</p>
+          <div style="text-align: center; margin-bottom: 8px;">
+            <p style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--color-carbon);">EXCELLENT WORK!</p>
+            <p id="feedback-workout-summary" style="font-size: 12px; margin-top: 4px; font-weight: bold; color: var(--color-ink-soft);"></p>
           </div>
 
-          <button class="btn-y2k btn-red" style="width: 100%;" onclick="closeFeedback()">OK</button>
+          <div class="settings-group">
+            <label class="settings-label">USER OPINION / BUG REPORT (TEXT ONLY)</label>
+            <textarea id="modal-feedback-comment" class="settings-input" style="height: 100px; font-family: var(--font-ui); font-size: 13px; line-height: 1.4; resize: none;" placeholder="스쿼트나 러닝 측정이 정상적으로 작동하나요? 자유롭게 의견을 적어주세요."></textarea>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn-y2k" style="flex: 1;" onclick="submitModalFeedback()">SEND FEEDBACK</button>
+            <button class="btn-y2k btn-red" style="flex: 1;" onclick="closeFeedback()">CLOSE</button>
+          </div>
         </div>
       </div>
     </div>
