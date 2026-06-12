@@ -1,4 +1,4 @@
-const CACHE_NAME = 'y2k-fitness-v5';
+const CACHE_NAME = 'y2k-fitness-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -50,5 +50,12 @@ self.addEventListener('fetch', (e) => {
         return cachedResponse || fetch(e.request);
       })
     );
+  }
+});
+
+// Skip waiting listener
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });

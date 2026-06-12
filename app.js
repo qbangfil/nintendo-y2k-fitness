@@ -371,7 +371,7 @@ function handleDeviceMotion(e) {
   const gaugePercent = Math.min(100, Math.max(0, (lowPassFilteredNorm - dynamicThresholdLow) / (dynamicThresholdHigh - dynamicThresholdLow) * 100));
   const gaugeBar = document.getElementById('squat-gauge-bar');
   if (gaugeBar) {
-    gaugeBar.style.width = gaugePercent + '%';
+    gaugeBar.style.height = gaugePercent + '%';
   }
 
   // Push to history for dynamic standard deviation threshold computation
@@ -731,7 +731,13 @@ const runnerFrames = [
 let currentRunnerFrameIdx = 0;
 
 function startRunnerAnimation() {
-  if (runnerAnimInterval) clearInterval(runnerAnimInterval);
+  try {
+    if (runnerAnimInterval !== null) {
+      clearInterval(runnerAnimInterval);
+      runnerAnimInterval = null;
+    }
+  } catch(e) {}
+  
   runnerAnimInterval = setInterval(() => {
     currentRunnerFrameIdx = (currentRunnerFrameIdx + 1) % runnerFrames.length;
     const runnerEl = document.getElementById('running-runner-character');
