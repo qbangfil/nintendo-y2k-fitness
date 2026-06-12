@@ -552,7 +552,7 @@ function openFeedbackModal(type, summaryText) {
 }
 
 function rateSession(stars) {
-  selectedStars = stars;
+  // stars rating removed
   const starsList = document.querySelectorAll('.star-btn');
   starsList.forEach((btn, idx) => {
     if (idx < stars) {
