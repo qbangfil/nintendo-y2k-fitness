@@ -22,14 +22,10 @@
 <body>
   <div class="app-container">
     <!-- Console Top Bar -->
-    <header>
-      <div class="logo-container">
-        <div class="logo-pill">
-          <span class="logo-text">Nintendo</span>
-        </div>
-        <span style="color: #ecab37; font-family: 'Press Start 2P', monospace; font-size: 8px;">FITNESS</span>
+    <header style="justify-content: center; padding: 10px 16px;">
+      <div style="font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--color-primary); text-shadow: 0 0 5px var(--color-primary); letter-spacing: -0.5px;">
+        VER 1.3 | UPDATED: 06-12 18:55
       </div>
-      <div id="connection-status" class="header-status">ONLINE</div>
     </header>
 
     <!-- Navigation Tabs -->
@@ -184,16 +180,19 @@
 
   <script src="./app.js"></script>
   <script>
-    // Register PWA Service Worker
+    // Register PWA Service Worker with active cache-bypassing check
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js')
+      navigator.serviceWorker.register('./sw.js?v=' + Date.now())
         .then(reg => {
+          // Check for service worker updates immediately on load
+          reg.update();
+          
           reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // Instantly refresh window when new sw is installed
-                window.location.reload();
+                alert('새 버전(v1.3) 업데이트 감지: 화면을 갱신합니다!');
+                window.location.reload(true);
               }
             });
           });

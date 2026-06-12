@@ -1,4 +1,4 @@
-const CACHE_NAME = 'y2k-fitness-v4';
+const CACHE_NAME = 'y2k-fitness-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -30,11 +30,25 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      return cachedResponse || fetch(e.request).catch(() => {
-        // Offline fallbacks
-      });
-    })
-  );
+  // Network-first for html and js to avoid caching locks
+  if (e.request.url.includes('index.html') || e.request.url.includes('app.js') || e.request.url.includes('sw.js')) {
+    e.respondWith(
+      fetch(e.request).then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(e.request, copy);
+        });
+        return response;
+      }).catch(() => {
+        return caches.match(e.request);
+      })
+    );
+  } else {
+    // Cache-first for style.css / images
+    e.respondWith(
+      caches.match(e.request).then((cachedResponse) => {
+        return cachedResponse || fetch(e.request);
+      })
+    );
+  }
 });
