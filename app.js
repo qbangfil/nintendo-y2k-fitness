@@ -36,7 +36,7 @@ const ctx = canvas.getContext('2d');
 let graphData = new Array(80).fill(0);
 
 // Rating Selection
-let selectedStars = 5;
+// selectedStars removed
 
 // --- VIEW NAVIGATION ---
 function switchView(viewName) {
@@ -541,7 +541,7 @@ function openFeedbackModal(type, summaryText) {
   document.getElementById('feedback-modal').style.display = 'flex';
   
   // Set default active stars
-  rateSession(5);
+  // rateSession removed
   
   // Create temp session storage
   localStorage.setItem('temp_workout_session', JSON.stringify({
@@ -580,7 +580,6 @@ function submitFeedback() {
   
   const feedbackData = {
     ...tempSession,
-    stars: selectedStars,
     comment: comment,
     timestamp: new Date().toISOString()
   };
@@ -603,20 +602,14 @@ function updateQueueUI() {
 
 // Webhook dispatcher
 function syncQueue() {
-  const sheetUrl = document.getElementById('sheet-url').value.trim();
-  
-  if (!sheetUrl) {
-    showToast('CONFIG GOOGLE SHEET WEBHOOK IN SETTINGS FIRST');
-    return;
-  }
+  const sheetUrl = 'https://script.google.com/macros/s/AKfycbwuEm9_rLvGKFYXbQDdE_o4kL22spctLIQXfb5tJJ3AI1rYubqccEvVzXAt58jRstqIEw/exec';
   
   if (webhookQueue.length === 0) {
     showToast('NO PENDING DATA TO SYNC');
     return;
   }
   
-  // Save sheet url configuration
-  localStorage.setItem('y2k_sheet_url', sheetUrl);
+  // Using hardcoded URL
   
   showToast('SYNCING...');
   let completedCount = 0;
@@ -658,8 +651,7 @@ function formatTime(totalSeconds) {
 
 // Load configurations and set network monitors
 window.addEventListener('load', () => {
-  const savedUrl = localStorage.getItem('y2k_sheet_url') || '';
-  document.getElementById('sheet-url').value = savedUrl;
+  // Fixed Sheet Integration
   
   updateQueueUI();
   

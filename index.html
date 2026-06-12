@@ -125,38 +125,11 @@
           </div>
 
           <div class="settings-group">
-            <label class="settings-label">GOOGLE SHEET WEBHOOK URL</label>
-            <input type="url" id="sheet-url" class="settings-input" placeholder="https://script.google.com/macros/s/.../exec">
+            <label class="settings-label">GOOGLE SHEET CONNECTION STATUS</label>
+            <div style="background-color: var(--color-platinum); padding: 12px; border-radius: 6px; border: 2px solid var(--color-carbon); font-weight: bold;">
+              <span class="status-indicator green"></span> 구글 스프레드시트가 자동으로 연결되어 동작 중입니다.
+            </div>
           </div>
-
-          <div class="guide-box" style="font-size: 10px;">
-            <strong>구글 시트 연동 가이드:</strong><br>
-            1. 구글 스프레드시트 생성<br>
-            2. [확장 프로그램] -> [Apps Script] 클릭<br>
-            3. 아래 코드를 복사해서 붙여넣고 [배포] -> [새 배포] -> [웹 앱] 선택 (액세스 권한: 모든 사용자)<br>
-            4. 발급된 URL을 위 입력창에 붙여넣어 주세요.
-          </div>
-
-          <!-- Mini Code Viewer for convenience -->
-          <textarea readonly class="settings-input" style="height: 100px; font-family: monospace; font-size: 10px; background-color: var(--color-platinum); font-weight: bold; border-style: dotted;" onclick="this.select()">
-function doPost(e) {
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    sheet.appendRow([
-      new Date(),
-      data.device_model || "Web",
-      data.workout_type,
-      data.metrics,
-      data.stars || "",
-      data.comment || ""
-    ]);
-    return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({result: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-          </textarea>
 
           <div class="settings-group" style="margin-top: 10px;">
             <span class="settings-label" style="margin-bottom: 4px;">OFFLINE CACHED QUEUE</span>
@@ -184,19 +157,8 @@ function doPost(e) {
           </div>
 
           <div class="settings-group">
-            <label class="settings-label" style="text-align: center;">HOW WAS THE MEASUREMENT ACCURATE?</label>
-            <div class="stars-container">
-              <button class="star-btn" onclick="rateSession(1)">★</button>
-              <button class="star-btn" onclick="rateSession(2)">★</button>
-              <button class="star-btn" onclick="rateSession(3)">★</button>
-              <button class="star-btn" onclick="rateSession(4)">★</button>
-              <button class="star-btn" onclick="rateSession(5)">★</button>
-            </div>
-          </div>
-
-          <div class="settings-group">
-            <label class="settings-label">USER OPINION / BUG REPORT</label>
-            <input type="text" id="feedback-comment" class="settings-input" placeholder="스쿼트 인식이 잘 되나요? 의견을 남겨주세요.">
+            <label class="settings-label">USER OPINION / BUG REPORT (TEXT ONLY)</label>
+            <textarea id="feedback-comment" class="settings-input" style="height: 120px; font-family: var(--font-ui); font-size: 13px; line-height: 1.4; resize: none;" placeholder="스쿼트나 러닝 측정이 정상적으로 작동하나요? 자유롭게 의견을 적어주세요."></textarea>
           </div>
 
           <div style="display: flex; gap: 8px; margin-top: 8px;">
