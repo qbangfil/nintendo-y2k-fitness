@@ -602,7 +602,7 @@ function updateQueueUI() {
 
 // Webhook dispatcher
 function syncQueue() {
-  const sheetUrl = 'https://script.google.com/macros/s/AKfycbwuEm9_rLvGKFYXbQDdE_o4kL22spctLIQXfb5tJJ3AI1rYubqccEvVzXAt58jRstqIEw/exec';
+  const sheetUrl = 'https://script.google.com/macros/s/AKfycby4RS17W3lZBXdrfgrFga0vwiAinuwGM8NO9wm7CkCIGHiiutQfoouRrtWQDaqlT09FDg/exec';
   
   if (webhookQueue.length === 0) {
     showToast('NO PENDING DATA TO SYNC');
