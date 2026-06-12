@@ -255,13 +255,21 @@ function stopRunning() {
 function updateRunningUI() {
   document.getElementById('gps-distance').innerText = gpsAccumulatedDistance.toFixed(2) + ' km';
   
-  if (gpsAccumulatedDistance > 0 && runDurationSeconds > 0) {
-    const rawPace = (runDurationSeconds / 60) / gpsAccumulatedDistance; // mins/km
-    const paceMins = Math.floor(rawPace);
-    const paceSecs = Math.floor((rawPace - paceMins) * 60);
-    document.getElementById('gps-pace').innerText = `${paceMins}:${paceSecs.toString().padStart(2, '0')}`;
+  // Calculate speed in km/h: distance / (hours)
+  if (runDurationSeconds > 0) {
+    const hours = runDurationSeconds / 3600;
+    const speedKmh = gpsAccumulatedDistance / hours;
+    document.getElementById('gps-pace').innerText = speedKmh.toFixed(1) + ' km/h';
+    
+    // Trigger animation if moving (speed > 0)
+    if (speedKmh > 0.1) {
+      startRunnerAnimation();
+    } else {
+      stopRunnerAnimation();
+    }
   } else {
-    document.getElementById('gps-pace').innerText = '--:--';
+    document.getElementById('gps-pace').innerText = '0.0 km/h';
+    stopRunnerAnimation();
   }
 }
 
@@ -287,32 +295,40 @@ function toggleSquat() {
 }
 
 function startSquat() {
-  if (activeWorkout) {
-    showToast('END ACTIVE SESSION FIRST');
-    return;
-  }
-  
-  // Check hardware eligibility (Policy 6.1)
-  if (!window.DeviceMotionEvent) {
-    showToast('DEVICE MOTION NOT SUPPORTED ON THIS BROWSER');
-    document.getElementById('squat-sensor-status').innerText = 'ERROR';
-    return;
-  }
-  
-  // Request iOS permission if on iOS (handled gracefully in PWA context)
-  if (typeof DeviceMotionEvent.requestPermission === 'function') {
-    DeviceMotionEvent.requestPermission()
-      .then(permissionState => {
-        if (permissionState === 'granted') {
+  try {
+    if (activeWorkout) {
+      showToast('END ACTIVE SESSION FIRST');
+      return;
+    }
+    
+    // Check hardware eligibility
+    if (!window.DeviceMotionEvent) {
+      showToast('DEVICE MOTION NOT SUPPORTED ON THIS BROWSER');
+      document.getElementById('squat-sensor-status').innerText = 'ERROR';
+      return;
+    }
+    
+    // Request permission wrapper for iOS and modern Android Chrome constraints
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            initSquatSensors();
+          } else {
+            showToast('MOTION SENSOR PERMISSION DENIED');
+          }
+        })
+        .catch(err => {
+          console.error("Permission request failed", err);
+          // Fallback to init sensors directly on error
           initSquatSensors();
-        } else {
-          showToast('MOTION SENSOR PERMISSION DENIED');
-        }
-      })
-      .catch(console.error);
-  } else {
-    // Android or Chrome desktop
-    initSquatSensors();
+        });
+    } else {
+      initSquatSensors();
+    }
+  } catch(globalErr) {
+    console.error("Start squat failed", globalErr);
+    showToast("SQUAT START ERROR");
   }
 }
 
