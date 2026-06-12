@@ -22,10 +22,13 @@
 <body>
   <div class="app-container">
     <!-- Console Top Bar -->
-    <header style="justify-content: center; padding: 10px 16px;">
-      <div style="font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--color-primary); text-shadow: 0 0 5px var(--color-primary); letter-spacing: -0.5px;">
-        VER 1.6 | UPDATED: 06-12 19:35
+    <header>
+      <div class="logo-container">
+        <div style="font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--color-primary); text-shadow: 0 0 5px var(--color-primary); letter-spacing: -0.5px;">
+          VER 1.7 | UPDATED: 06-12 19:35
+        </div>
       </div>
+      <div id="connection-status" class="header-status">ONLINE</div>
     </header>
 
     <!-- Navigation Tabs -->
@@ -69,7 +72,7 @@
           </div>
 
           <div class="guide-box">
-            GPS 정확도 20m 미만 필터링 및 터널 통과 시 <strong>10초 페이스 자동 보간(Dead Reckoning)</strong>이 탑재되어 있습니다.
+            GPS 정확도 50m 초과 좌표 자동 제외 및 터널 통과 시 <strong>10초 페이스 자동 보간(Dead Reckoning)</strong>이 탑재되어 있습니다.
           </div>
 
           <div style="display: flex; gap: 8px;">
@@ -167,7 +170,7 @@
 
           <div class="settings-group">
             <label class="settings-label">USER OPINION / BUG REPORT (TEXT ONLY)</label>
-            <textarea id="feedback-comment" class="settings-input" style="height: 100px; font-family: var(--font-ui); font-size: 13px; line-height: 1.4; resize: none;" placeholder="스쿼트나 러닝 측정이 정상적으로 작동하나요? 자유롭게 의견을 적어주세요."></textarea>
+            <textarea id="feedback-comment-modal" class="settings-input" style="height: 100px; font-family: var(--font-ui); font-size: 13px; line-height: 1.4; resize: none;" placeholder="스쿼트나 러닝 측정이 정상적으로 작동하나요? 자유롭게 의견을 적어주세요."></textarea>
           </div>
 
           <div style="display: flex; gap: 8px; margin-top: 8px;">

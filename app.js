@@ -1,3 +1,14 @@
+// Singleton AudioContext to prevent instantiation leaks
+let audioCtxInstance = null;
+function getAudioContext() {
+  if (!audioCtxInstance) {
+    audioCtxInstance = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtxInstance.state === 'suspended') {
+    audioCtxInstance.resume();
+  }
+  return audioCtxInstance;
+}
 // Nintendo Fitness Y2K Core Logic Engine (v1.2 Policy Standard)
 
 // --- STATE MANAGEMENT ---
@@ -31,12 +42,13 @@ let motionState = 'READY'; // READY, DOWN, UP, COOLDOWN
 let wakeLock = null;
 
 // Graph Settings
-const canvas = document.getElementById('motion-canvas');
-const ctx = canvas.getContext('2d');
-let graphData = new Array(80).fill(0);
+
+
+
 
 // Rating Selection
 // System logs metrics
+let currentDeviceOrientationTilt = 0;
 let peakAccNorm = 0;
 let tiltWarningCount = 0;
 
@@ -202,11 +214,9 @@ function applyDeadReckoning() {
   if (deadReckoningLimitSeconds < 10) {
     deadReckoningLimitSeconds += elapsed;
     
-    // Get average velocity of last 3 points
-    const last3 = gpsPointsList.slice(-3);
-    const averageSpeed = last3.reduce((sum, p) => sum + (p.speed || 0), 0) / 3; // m/s
-    
-    const addedDistanceKm = (averageSpeed * elapsed) / 1000;
+    // Policy 2-3: Use fixed 5.0 km/h (= 1.388 m/s) dead reckoning speed for tunnel
+    const DEAD_RECKONING_SPEED_MS = 1.388; // 5.0 km/h in m/s
+    const addedDistanceKm = (DEAD_RECKONING_SPEED_MS * elapsed) / 1000;
     gpsAccumulatedDistance += addedDistanceKm;
     console.log('Dead Reckoning Applied: +' + addedDistanceKm.toFixed(4) + ' km');
   } else {
@@ -374,23 +384,15 @@ function handleDeviceMotion(e) {
   // Low-Pass Filter (LPF)
   lowPassFilteredNorm = lowPassFilteredNorm + filterAlpha * (rawNorm - lowPassFilteredNorm);
   
-  // Gym angles: Check gyro tilt
-  let rRate = e.rotationRate;
-  if (rRate) {
-    // Gyro values
-    const pitch = Math.abs(rRate.beta || 0); 
-    const roll = Math.abs(rRate.alpha || 0);
-    const maxTilt = Math.max(pitch, roll);
-    
-    // Policy 5.2: Gyro warning threshold (30 degrees tilt)
-    if (maxTilt > 30) {
-      tiltWarningCount++;
-      document.getElementById('squat-tilt').innerHTML = `<span style="color: var(--color-primary)">TILT (${Math.round(maxTilt)}°)</span>`;
-      document.getElementById('squat-tilt').classList.add('blink');
-    } else {
-      document.getElementById('squat-tilt').innerText = `OK (${Math.round(maxTilt)}°)`;
-      document.getElementById('squat-tilt').classList.remove('blink');
-    }
+  // Gym angles: Check gyro tilt using true orientation variables (Policy 2-1)
+  const maxTilt = currentDeviceOrientationTilt;
+  if (maxTilt > 30) {
+    tiltWarningCount++;
+    document.getElementById('squat-tilt').innerHTML = `<span style="color: var(--color-primary)">TILT (${Math.round(maxTilt)}°)</span>`;
+    document.getElementById('squat-tilt').classList.add('blink');
+  } else {
+    document.getElementById('squat-tilt').innerText = `OK (${Math.round(maxTilt)}°)`;
+    document.getElementById('squat-tilt').classList.remove('blink');
   }
 
   // Track Peak
@@ -411,9 +413,7 @@ function handleDeviceMotion(e) {
     sensorNormHistory.shift();
   }
   
-  // Push value to graph array
-  graphData.push(lowPassFilteredNorm);
-  if (graphData.length > 80) graphData.shift();
+
   
   // Running Squat Peak-Valley Tracker (Policy 5.3)
   detectSquatCycle();
@@ -501,7 +501,7 @@ function stopSquat() {
 // 8-bit Retro sound effect generator using Web Audio API
 function playRetroBeep() {
   try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     
@@ -522,44 +522,7 @@ function playRetroBeep() {
   }
 }
 
-// Draw Oscilloscope Motion Graph
-function drawGraph() {
-  if (!isSquatting) return;
-  
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = '#8be03a';
-  ctx.lineWidth = 2;
-  
-  ctx.beginPath();
-  const step = canvas.width / 80;
-  
-  for (let i = 0; i < graphData.length; i++) {
-    // Map values around center line
-    const val = graphData[i];
-    const y = (canvas.height / 2) - (val * 8);
-    const x = i * step;
-    
-    if (i === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  }
-  ctx.stroke();
-  
-  // Draw adaptive high/low lines as dotted green
-  ctx.strokeStyle = 'rgba(139, 224, 58, 0.2)';
-  ctx.setLineDash([2, 4]);
-  ctx.beginPath();
-  ctx.moveTo(0, (canvas.height / 2) - (dynamicThresholdHigh * 8));
-  ctx.lineTo(canvas.width, (canvas.height / 2) - (dynamicThresholdHigh * 8));
-  ctx.moveTo(0, (canvas.height / 2) - (dynamicThresholdLow * 8));
-  ctx.lineTo(canvas.width, (canvas.height / 2) - (dynamicThresholdLow * 8));
-  ctx.stroke();
-  ctx.setLineDash([]); // Reset
-  
-  requestAnimationFrame(drawGraph);
-}
+
 
 // --- WAKE LOCK API (Ensure Screen On) ---
 async function requestWakeLock() {
@@ -665,21 +628,26 @@ function syncQueue() {
   queueToProcess.forEach((item, index) => {
     fetch(sheetUrl, {
       method: 'POST',
-      mode: 'no-cors', // standard cross-domain webhook trigger
+      mode: 'cors', // Enable CORS for proper HTTP status checks
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(item)
     })
-    .then(() => {
-      // Remove from memory queue
-      webhookQueue = webhookQueue.filter(q => q.timestamp !== item.timestamp);
-      localStorage.setItem('y2k_webhook_queue', JSON.stringify(webhookQueue));
-      completedCount++;
-      
-      if (index === queueToProcess.length - 1 || webhookQueue.length === 0) {
-        showToast(`SYNC COMPLETE! (${completedCount} LOGS SENT)`);
-        updateQueueUI();
+    .then(res => {
+      // Verify HTTP status code (Policy 3-2)
+      if (res.ok) {
+        // Remove from memory queue
+        webhookQueue = webhookQueue.filter(q => q.timestamp !== item.timestamp);
+        localStorage.setItem('y2k_webhook_queue', JSON.stringify(webhookQueue));
+        completedCount++;
+        
+        if (index === queueToProcess.length - 1 || webhookQueue.length === 0) {
+          showToast('SYNC COMPLETE! (' + completedCount + ' LOGS SENT)');
+          updateQueueUI();
+        }
+      } else {
+        throw new Error('HTTP Status: ' + res.status);
       }
     })
     .catch(err => {
@@ -735,7 +703,7 @@ function submitFeedbackDirect() {
   
   const feedbackData = {
     workout_type: 'FEEDBACK',
-    metrics: 'User text feedback',
+    metrics: 'User text feedback | System Log: [Peak Acc: ' + peakAccNorm.toFixed(2) + ' m/s2, Tilts: ' + tiltWarningCount + ']',
     device_model: navigator.userAgent.includes('Android') ? 'Android Device' : 'iOS/Web Device',
     comment: commentText,
     timestamp: new Date().toISOString()
@@ -788,3 +756,37 @@ function stopRunnerAnimation() {
     runnerEl.innerText = 'o-[===]';
   }
 }
+
+// Alias helper mapping to prevent modal submission crashes
+function submitModalFeedback() {
+  const tempSessionRaw = localStorage.getItem('temp_workout_session');
+  if (!tempSessionRaw) {
+    closeFeedback();
+    return;
+  }
+  
+  const tempSession = JSON.parse(tempSessionRaw);
+  const commentEl = document.getElementById('feedback-comment-modal');
+  const comment = commentEl ? commentEl.value.trim() : '';
+  
+  const feedbackData = {
+    ...tempSession,
+    comment: comment || 'Workout finished successfully (No comment)',
+    timestamp: new Date().toISOString()
+  };
+  
+  webhookQueue.push(feedbackData);
+  localStorage.setItem('y2k_webhook_queue', JSON.stringify(webhookQueue));
+  updateQueueUI();
+  
+  closeFeedback();
+  showToast('FEEDBACK SAVED TO QUEUE');
+  syncQueue();
+}
+
+
+// Register deviceorientation listener for correct tilt angles (Policy 2-1)
+window.addEventListener('deviceorientation', (e) => {
+  const tilt = Math.max(Math.abs(e.beta || 0), Math.abs(e.gamma || 0));
+  currentDeviceOrientationTilt = tilt;
+});
