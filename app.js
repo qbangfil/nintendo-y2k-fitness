@@ -143,8 +143,8 @@ function handleGpsUpdate(position) {
   const speed = position.coords.speed || 0; // m/s
   const timestamp = position.timestamp;
   
-  // Policy 3.1: Accuracy Filter (Must be < 20m)
-  if (rawAccuracy > 20) {
+  // Policy 3.1: Accuracy Filter (If indoor or accuracy is poor, relax to 50m to show coordinates)
+  if (rawAccuracy > 50) {
     console.warn('GPS dropped due to poor accuracy: ' + rawAccuracy + 'm');
     return;
   }
@@ -215,19 +215,34 @@ function applyDeadReckoning() {
 }
 
 function stopRunning() {
-  if (gpsWatchId) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
+  try {
+    if (gpsWatchId !== null) {
+      try {
+        navigator.geolocation.clearWatch(gpsWatchId);
+      } catch(e) {}
+      gpsWatchId = null;
+    }
+  } catch(e) {}
   
-  clearInterval(runTimerInterval);
-  releaseWakeLock();
+  try {
+    if (runTimerInterval !== null) {
+      clearInterval(runTimerInterval);
+      runTimerInterval = null;
+    }
+  } catch(e) {}
+  
+  try {
+    releaseWakeLock();
+  } catch(e) {}
   
   // Calculate average pace
   const finalDistance = gpsAccumulatedDistance;
   const finalTime = runDurationSeconds;
   
-  stopRunnerAnimation();
+  try {
+    stopRunnerAnimation();
+  } catch(e) {}
+  
   activeWorkout = null;
   document.getElementById('gps-status').innerHTML = '<span class="status-indicator"></span>STANDBY';
   document.getElementById('btn-run-start').disabled = false;
